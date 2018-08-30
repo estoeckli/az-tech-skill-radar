@@ -100,6 +100,38 @@ const GoogleSheet = function (sheetReference, sheetName) {
     return self;
 };
 
+const CSVFile = function (file) {
+  var self = {};
+
+  self.build = function () {
+    var data = d3.csvParse(file);
+    createBlips(data);
+  }
+
+  var createBlips = function (data) {
+      const TITLE = "Tech Skill Radar from .csv";
+      try {
+          var columnNames = data['columns'];
+          console.log(columnNames);
+          delete data['columns'];
+          var contentValidator = new ContentValidator(columnNames);
+          contentValidator.verifyContent();
+          contentValidator.verifyHeaders();
+          var blips = _.map(data, new InputSanitizer().sanitize);
+          plotRadar(TITLE, blips);
+      } catch (exception) {
+          plotErrorMessage(exception);
+      }
+  }
+
+  self.init = function () {
+      plotLoading();
+      return self;
+  };
+
+  return self;
+}
+
 const CSVDocument = function (url) {
     var self = {};
 
@@ -164,12 +196,19 @@ const FileName = function (url) {
 
 const GoogleSheetInput = function () {
     var self = {};
-    
+
     self.build = function () {
         var domainName = DomainName(window.location.search.substring(1));
         var queryParams = QueryParams(window.location.search.substring(1));
+        var localCSV = readRadarFromLocalStorage();
 
-        if (domainName && queryParams.sheetId.endsWith('csv')) {
+        console.log(queryParams);
+
+        if (localCSV && queryParams.useLocalCSV) {
+          var sheet = CSVFile(localCSV);
+          sheet.init().build();
+        }
+        else if (domainName && queryParams.sheetId.endsWith('csv')) {
             var sheet = CSVDocument(queryParams.sheetId);
             sheet.init().build();
         }
@@ -238,9 +277,6 @@ function plotFooter(content) {
         + 'By using this service you agree to <a href="https://www.thoughtworks.com/radar/tos">ThoughtWorks\' terms of use</a>. '
         + 'You also agree to our <a href="https://www.thoughtworks.com/privacy-policy">privacy policy</a>, which describes how we will gather, use and protect any personal data contained in your public Google Sheet. '
         + 'This software is <a href="https://github.com/thoughtworks/build-your-own-radar">open source</a> and available for download and self-hosting.');
-
-
-
 }
 
 function plotBanner(content, text) {
@@ -262,8 +298,26 @@ function plotForm(content) {
     form.append('input')
         .attr('type', 'text')
         .attr('name', 'sheetId')
-        .attr('placeholder', "e.g. https://docs.google.com/spreadsheets/d/<\sheetid\> or hosted CSV file")
-        .attr('required','');
+        .attr('placeholder', "e.g. https://docs.google.com/spreadsheets/d/<\sheetid\> or hosted CSV file");
+
+    form.append('label')
+        .attr('for', 'useLocalCSV')
+        .text('Or check to use local csv');
+
+    form.append("input")
+        .property("checked", false)
+        .attr("type", "checkbox")
+        .attr('name', 'useLocalCSV')
+        .attr("id", 'useLocalCSV');
+
+    form.append('input')
+        .attr('type', 'file')
+        .attr('name', 'localCSV')
+        .attr('accept', '.csv')
+        // d3.select on input change: https://github.com/d3/d3-selection#handling-events
+        .on("input", function() {
+            saveRadarToLocalStorage(document.querySelector('input[type=file]').files[0]);
+        });
 
     form.append('button')
         .attr('type', 'submit')

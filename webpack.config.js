@@ -16,7 +16,7 @@ let common = ['./src/common.js'];
 let devtool;
 
 if (isDev) {
-    main.push('webpack-dev-server/client?http://0.0.0.0:8080');
+    main.push('webpack-dev-server/client?http://0.0.0.0:8081');
     devtool = 'source-map';
 }
 
@@ -86,7 +86,7 @@ module.exports = {
     devServer: {
         contentBase: buildPath,
         host: '0.0.0.0',
-        port: 8080
+        port: 8081
     }
 };
 
