@@ -1,15 +1,15 @@
 # server block for static file serving
 server {
-  listen 80;
+  listen 8080;
   location / {
-    root /opt/build-your-own-radar;
+    root /opt/aztech-skill-radar;
     index index.html;
   }
 
   # custom error page for 404 errors
   error_page 404 /error.html;
   location = /error.html {
-    root /opt/build-your-own-radar;
+    root /opt/aztech-skill-radar;
   }
 
   # nginx default error page for 50x errors
